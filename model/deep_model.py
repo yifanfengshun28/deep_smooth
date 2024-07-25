@@ -100,8 +100,9 @@ class IvSmoother(nn.Module):
         d2vdm2 = torch.autograd.grad(dvdm, logm, grad_outputs=torch.ones_like(dvdm),create_graph=True)[0]
 
         l_c4 = torch.mean(F.relu(-dvdt))
+        # 论文中的表达式和官方代码中的表达式不同，这里以代码中的表达式为准
         g_k = ((1-((logm*dvdm)/(2*w)))**2 -
-               ((dvdm/4)*(1/w + 1/4)) + ((d2vdm2**2) / 2))
+               ((dvdm**2/4)*(1/w + 1/4)) + (d2vdm2 / 2))
         l_c5 = torch.mean(F.relu(-g_k))
         l_c6 = torch.mean(torch.abs(d2vdm2))
 
