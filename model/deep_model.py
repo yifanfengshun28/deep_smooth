@@ -70,14 +70,16 @@ class IvSmoother(nn.Module):
         return iv_hat
     
     def get_loss_fit(self, w, w_hat, iv, iv_hat, iv_spread=None,prior=None):
-        l_fit_w_rmse = torch.mean((1e-6 + (w - w_hat) ** 2) ** 0.5)
+        # l_fit_w_rmse = torch.mean((1e-6 + (w - w_hat) ** 2) ** 0.5)
+        l_fit_w_rmse = torch.sqrt(torch.mean((1e-6 + (w - w_hat) ** 2)))
         l_fit_w_mape = torch.mean(torch.abs((w_hat - w) / (w + 1e-6)))
         l_fit_w = (l_fit_w_rmse + l_fit_w_mape)
         
         l_fit_iv_mape = torch.mean(torch.abs((iv_hat - iv) / (iv + 1e-6)))
 
         if iv_spread is None:
-            l_fit_iv_rmse = torch.mean((1e-6 + (iv - iv_hat) ** 2) ** 0.5)
+            # l_fit_iv_rmse = torch.mean((1e-6 + (iv - iv_hat) ** 2) ** 0.5)
+            l_fit_iv_rmse = torch.sqrt(torch.mean((1e-6 + (iv - iv_hat) ** 2)))
         else:
             l_fit_iv_rmse = torch.mean(1e-6 + torch.abs(iv - iv_hat) / (1 + iv_spread))
         
@@ -98,11 +100,9 @@ class IvSmoother(nn.Module):
         d2vdm2 = torch.autograd.grad(dvdm, logm, grad_outputs=torch.ones_like(dvdm),create_graph=True)[0]
 
         l_c4 = torch.mean(F.relu(-dvdt))
-        
-        g_k = ((1 - logm * dvdm / (2 * w)) ** 2 -
-               dvdm ** 2 / 4 * (1 / w + 1 / 4) + d2vdm2 / 2)
+        g_k = ((1-((logm*dvdm)/(2*w)))**2 -
+               ((dvdm/4)*(1/w + 1/4)) + ((d2vdm2**2) / 2))
         l_c5 = torch.mean(F.relu(-g_k))
-        
         l_c6 = torch.mean(torch.abs(d2vdm2))
 
         return {
